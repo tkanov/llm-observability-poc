@@ -1,7 +1,8 @@
-## LLM observability implementation with tracing.  
+## LLM observability implementation with tracing
 
+Built with Python, FastAPI, OpenAI API.
 
-The app/ contains a single API endpoint that:
+The `app/` contains a FastAPI endpoint that:
 - takes a support ticket, 
 - optionally retrieves a few KB snippets, 
 - calls an LLM, 
@@ -11,9 +12,9 @@ with end-to-end tracing and a repeatable evaluation run 🙌
 
 ### Repo layout
 
-- app/ (FastAPI + logic)
+- `app/` FastAPI + logic
 
-- data/kb/ (markdown knowledge base)
+- `data/kb/` markdown knowledge base (sample files)
 
 
 ### How to run this
