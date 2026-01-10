@@ -43,13 +43,14 @@ def verify_api_key():
         raise ValueError(error_msg) from e
 
 
-def generate_draft(customer_message, context=None):
+def generate_draft(customer_message, context=None, snippets=None):
     """
     Generate a draft reply based on the customer message.
     
     Args:
         customer_message: Customer message string
         context: Optional dict (not used in simplified version, kept for compatibility)
+        snippets: Optional list of snippet dicts with source_id and excerpt
     
     Returns:
         Tuple of (draft_text: str, metadata: dict) where metadata contains:
@@ -57,8 +58,18 @@ def generate_draft(customer_message, context=None):
         - latency_ms: int
         - token_usage: dict with prompt_tokens, completion_tokens, total_tokens
     """
-    # Simple prompt that will be concatenated with customer message
+    # Build system prompt with knowledge base snippets if available
     system_prompt = "You are a helpful customer support agent with a fun and engaging attitude. Draft a short, professional, and friendly reply to the customer's message."
+    
+    user_content = customer_message
+    
+    # Inject snippets if any found
+    if snippets and len(snippets) > 0:
+        snippets_text = "\n\nRelevant knowledge base information:\n"
+        for i, snippet in enumerate(snippets, 1):
+            snippets_text += f"\n[{i}] From {snippet['source_id']}:\n{snippet['excerpt']}\n"
+        
+        user_content += snippets_text
     
     start_time = time.time()
     
@@ -68,7 +79,7 @@ def generate_draft(customer_message, context=None):
             "model": "gpt-4o-mini",  # Using cost-effective model, can be made configurable
             "messages": [
                 {"role": "system", "content": system_prompt},
-                {"role": "user", "content": customer_message}
+                {"role": "user", "content": user_content}
             ],
             "temperature": 0.9,
             "max_tokens": 500
