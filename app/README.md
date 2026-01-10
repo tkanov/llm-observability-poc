@@ -26,11 +26,22 @@ with end-to-end tracing and a repeatable evaluation run.
    pip install -r requirements.txt
    ```
 
-3. Run the FastAPI app:
+3. Set up environment variables:
+   Create a `.env` file in the project root with your OpenAI API key:
+   ```bash
+   echo "OPENAI_API_KEY=your_openai_api_key_here" > .env
+   ```
+   Or manually create `.env` and add:
+   ```
+   OPENAI_API_KEY=your_openai_api_key_here
+   ```
+
+4. Run the FastAPI app:
    ```bash
    uvicorn app.main:app --reload
    ```
 
-4. The API will be available at `http://localhost:8000`
+5. The API will be available at `http://localhost:8000`
    - Health check: `GET http://localhost:8000/health`
    - API docs: `http://localhost:8000/docs`
+
