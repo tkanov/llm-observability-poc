@@ -15,7 +15,12 @@ The `app/` contains a FastAPI endpoint that:
 - calls an LLM, 
 - and returns a draft
 
-with end-to-end tracing and a repeatable evaluation run 🙌
+
+Langfuse dashboard showing a list of traces this app produces when the `/draft-reply` endpoint is invoked:
+
+![Langfuse dashboard](Langfuse-dashboard.png)
+
+---
 
 ### Repo layout
 
@@ -59,7 +64,7 @@ with end-to-end tracing and a repeatable evaluation run 🙌
 
 
 ### How retrieval works
-1. Precompute an index from data/kb/*.md using TF-IDF vectorization.
+1. Precompute an index from `data/kb/*.md` using TF-IDF vectorization.
 2. Retrieval returns top 3 snippets by similarity.
 3. Inject snippets into the prompt and return them as citations.
 
