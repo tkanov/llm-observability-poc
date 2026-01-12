@@ -1,13 +1,16 @@
-## LLM observability implementation with tracing
+## LLM observability demo: a customer support draft assistant with tracing
 
-A single-endpoint customer service helper application that assists support agents by automatically generating draft replies to customer inquiries. 
+A minimal FastAPI app that generates draft replies for support agents and logs the full LLM workflow to Langfuse.
 
-The app retrieves relevant information from a knowledge base, and uses an LLM to generate contextual responses. 
+The app retrieves relevant context from a local knowledge base (scikit-learn) and calls the OpenAI API to produce a grounded draft response.
 
-Built with Python, FastAPI, sklearn, and OpenAI API, and Langfuse.
+Tech: Python, FastAPI, scikit-learn, OpenAI API, Langfuse.
 
 
 ---
+
+
+## What's inside
 
 The `app/` contains a FastAPI endpoint that:
 - takes a support ticket, 
@@ -16,17 +19,18 @@ The `app/` contains a FastAPI endpoint that:
 - and returns a draft
 
 
-Langfuse dashboard showing a list of traces this app produces when the `/draft-reply` endpoint is invoked:
+The `data/kb/` is the knowledge base (sample .md files) to use for model grounding.
+
+---
+
+
+## Resulting Langfuse dashboard 
+
+showing a list of traces the app produces when the `/draft-reply` endpoint is invoked:
 
 ![Langfuse dashboard](Langfuse-dashboard.png)
 
 ---
-
-### Repo layout
-
-- `app/` FastAPI + logic
-
-- `data/kb/` markdown knowledge base (sample files)
 
 
 ### How to run this
