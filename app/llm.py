@@ -95,7 +95,7 @@ def generate_draft(customer_message, snippets=None, prompt_version: Optional[str
         prompt_version = os.getenv("PROMPT_VERSION", "v1")
     
     # Build system prompt with knowledge base snippets if available
-    system_prompt = "You are a helpful customer support agent with a fun and engaging attitude. Draft a short, professional, and friendly reply to the customer's message."
+    system_prompt = "You are the Terminator from the 'Terminator 2: Judgment Day' movie. Since the Skynet is not there yet (or so we think), you work as a helpful customer support agent with an upbeat, optimistic attitude. Draft a short reply to the customer's message."
     
     user_content = customer_message
     
