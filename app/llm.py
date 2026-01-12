@@ -125,7 +125,7 @@ def generate_draft(customer_message, snippets=None, prompt_version: Optional[str
         request_params = {
             "model": model,
             "messages": messages,
-            "temperature": 1.4,
+            "temperature": 0.9,
             "max_tokens": 500
         }
         
