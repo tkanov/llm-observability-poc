@@ -1,6 +1,14 @@
 ## LLM observability implementation with tracing
 
-Built with Python, FastAPI, OpenAI API.
+A single-endpoint customer service helper application that assists support agents by automatically generating draft replies to customer inquiries. 
+
+The app retrieves relevant information from a knowledge base, and uses an LLM to generate contextual responses. 
+
+Built with Python, FastAPI, sklearn, and OpenAI API.
+
+Coming next: a Langfuse integration! 🤩
+
+---
 
 The `app/` contains a FastAPI endpoint that:
 - takes a support ticket, 
@@ -48,4 +56,13 @@ with end-to-end tracing and a repeatable evaluation run 🙌
 5. The API will be available at `http://localhost:8000`
    - Health check: `GET http://localhost:8000/health`
    - API docs: `http://localhost:8000/docs`
+
+
+
+### How retrieval works
+
+1. Precompute an index from data/kb/*.md.
+2. Retrieval returns top 3 snippets by similarity.
+3. Inject snippets into the prompt and return them as citations.
+
 

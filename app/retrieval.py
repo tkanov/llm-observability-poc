@@ -147,12 +147,13 @@ def _ensure_index():
         logger.debug("Reusing existing TF-IDF index")
 
 
-def retrieve(customer_message: str) -> List[Dict[str, str]]:
+def retrieve(customer_message: str, trace=None) -> List[Dict[str, str]]:
     """
     Retrieve relevant snippets from knowledge base based on customer message.
     
     Args:
         customer_message: Customer message string
+        trace: Optional Langfuse trace object for observability
     
     Returns:
         List of snippet dicts with source_id and excerpt (top 3 by similarity)
@@ -160,10 +161,20 @@ def retrieve(customer_message: str) -> List[Dict[str, str]]:
     start_time = time.time()
     logger.info(f"Starting retrieval for query: {customer_message[:100]}...")
     
+    # Create retrieval span if trace is available
+    # span = None
+    # if trace is not None:
+    #     span = trace.start_span(
+    #         name="retrieval",
+    #         input={"query": customer_message}
+    #     )
+    
     _ensure_index()
     
     if not _snippets or not _vectorizer or _tfidf_matrix is None:
         logger.warning("Index not available, returning empty results")
+        # if span:
+        #     span.end()
         return []
     
     logger.debug(f"Index contains {len(_snippets)} snippets to search")
@@ -184,15 +195,18 @@ def retrieve(customer_message: str) -> List[Dict[str, str]]:
         # Build results
         results = []
         filtered_count = 0
+        selected_doc_ids = []
         for idx in top_indices:
             similarity_score = similarities[idx]
             # Only include snippets with non-zero similarity
             if similarity_score > 0:
+                doc_id = _source_ids[idx]
                 results.append({
-                    "source_id": _source_ids[idx],
+                    "source_id": doc_id,
                     "excerpt": _snippets[idx]
                 })
-                logger.debug(f"Added snippet from {_source_ids[idx]} with similarity: {similarity_score:.4f}")
+                selected_doc_ids.append(doc_id)
+                logger.debug(f"Added snippet from {doc_id} with similarity: {similarity_score:.4f}")
             else:
                 filtered_count += 1
         
@@ -209,9 +223,18 @@ def retrieve(customer_message: str) -> List[Dict[str, str]]:
                 f"in {elapsed_ms}ms for query: {customer_message[:50]}..."
             )
         
+        # End span
+        # if span:
+        #     span.end()
+        
         return results
         
     except Exception as e:
         elapsed_ms = int((time.time() - start_time) * 1000)
         logger.error(f"Error during retrieval after {elapsed_ms}ms: {e}", exc_info=True)
+        
+        # End span with error
+        # if span:
+        #     span.end()
+        
         return []

@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI
 from pydantic import BaseModel
 from typing import Optional
@@ -29,12 +30,20 @@ def health():
 
 @app.post('/draft-reply')
 def draft_reply(request: DraftRequest):
-    with start_trace(ticket_id=request.ticket_id):
+    prompt_version = os.getenv("PROMPT_VERSION", "v1")
+    env = os.getenv("ENV", "dev")
+    
+    with start_trace(ticket_id=request.ticket_id, env=env, prompt_version=prompt_version) as trace:
         # Retrieve relevant snippets from knowledge base
-        snippets = retrieve(request.customer_message)
+        snippets = retrieve(request.customer_message, trace=trace)
         
         # Generate CS response draft using OpenAI with snippets injected
-        draft, metadata = generate_draft(request.customer_message, snippets=snippets)
+        draft, metadata = generate_draft(
+            request.customer_message, 
+            snippets=snippets, 
+            trace=trace,
+            prompt_version=prompt_version
+        )
         
         # Build citations from retrieved snippets
         citations = []
