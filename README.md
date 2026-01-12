@@ -4,9 +4,8 @@ A single-endpoint customer service helper application that assists support agent
 
 The app retrieves relevant information from a knowledge base, and uses an LLM to generate contextual responses. 
 
-Built with Python, FastAPI, sklearn, and OpenAI API.
+Built with Python, FastAPI, sklearn, and OpenAI API, and Langfuse.
 
-Coming next: a Langfuse integration! 🤩
 
 ---
 
@@ -61,7 +60,7 @@ with end-to-end tracing and a repeatable evaluation run 🙌
 
 ### How retrieval works
 
-1. Precompute an index from data/kb/*.md.
+1. Precompute an index from `data/kb/*.md`.
 2. Retrieval returns top 3 snippets by similarity.
 3. Inject snippets into the prompt and return them as citations.
 

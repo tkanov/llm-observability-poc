@@ -195,7 +195,6 @@ def retrieve(customer_message: str, trace=None) -> List[Dict[str, str]]:
         # Build results
         results = []
         filtered_count = 0
-        selected_doc_ids = []
         for idx in top_indices:
             similarity_score = similarities[idx]
             # Only include snippets with non-zero similarity
@@ -205,7 +204,6 @@ def retrieve(customer_message: str, trace=None) -> List[Dict[str, str]]:
                     "source_id": doc_id,
                     "excerpt": _snippets[idx]
                 })
-                selected_doc_ids.append(doc_id)
                 logger.debug(f"Added snippet from {doc_id} with similarity: {similarity_score:.4f}")
             else:
                 filtered_count += 1
