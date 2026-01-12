@@ -24,7 +24,7 @@ The `data/kb/` is the knowledge base (sample .md files) to use for model groundi
 ---
 
 
-## Resulting Langfuse dashboard 
+## Resulting Langfuse dashboard ("Tracing")
 
 showing a list of traces the app produces when the `/draft-reply` endpoint is invoked:
 
@@ -47,14 +47,18 @@ showing a list of traces the app produces when the `/draft-reply` endpoint is in
    ```
 
 3. Set up environment variables:
-   Create a `.env` file in the project root with your OpenAI API key:
-   ```bash
-   echo "OPENAI_API_KEY=your_openai_api_key_here" > .env
-   ```
-   Or manually create `.env` and add:
+   Create a `.env` file in the project root with the required keys:
+
    ```
    OPENAI_API_KEY=your_openai_api_key_here
+
+   LANGFUSE_SECRET_KEY=your_langfuse_secret_key_here
+   LANGFUSE_PUBLIC_KEY=your_langfuse_public_key_here
+   LANGFUSE_BASE_URL=your_langfuse_base_url_here
+
+   ENV=dev
    ```
+   The `ENV` value can be anything (for example, `dev`).
 
 4. Run the FastAPI app:
    ```bash
@@ -76,5 +80,4 @@ showing a list of traces the app produces when the `/draft-reply` endpoint is in
 
 TF-IDF turns each document into a vector of word scores: terms that appear often in a document but less often across the whole set get higher weight. That makes common filler words less important and helps similarity search focus on the most distinctive terms. It is easier to use for PoCs like this one.
 
-Implementation lives in `app/retrieval.py`, in the TF-IDF index builder and retrieval helpers (see `build_tfidf_index`). Can be safely ignored for the Langchain demo purposes.
-
+Implementation lives in `app/retrieval.py`, in the TF-IDF index builder and retrieval helpers (see `build_tfidf_index`). Can be safely ignored for the Langfuse demo purposes.
