@@ -2,9 +2,12 @@ import os
 import time
 import logging
 import json
+
 from typing import Optional
-from openai import OpenAI
 from dotenv import load_dotenv
+
+from langfuse.openai import openai
+
 
 load_dotenv()
 
@@ -15,9 +18,6 @@ logging.basicConfig(
     handlers=[logging.StreamHandler()]
 )
 logger = logging.getLogger(__name__)
-
-# Initialize OpenAI client
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 
 def verify_api_key():
@@ -35,7 +35,7 @@ def verify_api_key():
     logger.info("Verifying OpenAI API key...")
     try:
         # Make a minimal API call to verify the key works
-        response = client.models.list()
+        response = openai.models.list()
         logger.info("OpenAI API key verified successfully")
         return True
     except Exception as e:
@@ -60,12 +60,14 @@ def _calculate_cost(model: str, prompt_tokens: int, completion_tokens: int) -> O
     # These can be overridden via environment variables or updated as needed
     pricing = {
         "gpt-4o-mini": {"input": 0.15, "output": 0.60},
+        "gpt-4o-mini-2024-07-18": {"input": 0.15, "output": 0.60},  # same as above
         "gpt-4o": {"input": 2.50, "output": 10.00},
-        "gpt-3.5-turbo": {"input": 0.50, "output": 1.50},  # 'leagcy' model according to openai pricing page
+        "gpt-3.5-turbo": {"input": 0.50, "output": 1.50},  # 'leagcy' model
     }
     
     # Check if pricing is available for this model
     if model not in pricing:
+        logger.warning("No pricing available for model: %s", model)
         return None
     
     model_pricing = pricing[model]
@@ -75,23 +77,19 @@ def _calculate_cost(model: str, prompt_tokens: int, completion_tokens: int) -> O
     return input_cost + output_cost
 
 
-def generate_draft(customer_message, context=None, snippets=None, trace=None, prompt_version: Optional[str] = None):
+def generate_draft(customer_message, snippets=None, prompt_version: Optional[str] = None):
     """
     Generate a draft reply based on the customer message.
     
     Args:
         customer_message: Customer message string
-        context: Optional dict (not used in simplified version, kept for compatibility)
         snippets: Optional list of snippet dicts with source_id and excerpt
-        trace: Optional Langfuse trace object for observability
         prompt_version: Optional prompt version identifier
     
     Returns:
-        Tuple of (draft_text: str, metadata: dict) where metadata contains:
-        - model: str
-        - latency_ms: int
-        - token_usage: dict with prompt_tokens, completion_tokens, total_tokens
+        draft_text: str
     """
+
     # Get prompt version from env if not provided
     if prompt_version is None:
         prompt_version = os.getenv("PROMPT_VERSION", "v1")
@@ -108,29 +106,48 @@ def generate_draft(customer_message, context=None, snippets=None, trace=None, pr
             snippets_text += f"\n[{i}] From {snippet['source_id']}:\n{snippet['excerpt']}\n"
         
         user_content += snippets_text
-    
-    start_time = time.time()
-    
+
     # Prepare request parameters
-    model = "gpt-4o-mini"  # Using cost-effective model, can be made configurable
+    model = "gpt-4o-mini"  # el cheapo
     messages = [
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": user_content}
     ]
+    snippet_names = []
+    if snippets:
+        snippet_names = [
+            snippet["source_id"]
+            for snippet in snippets
+            if "source_id" in snippet
+        ]
 
     try:
         request_params = {
             "model": model,
             "messages": messages,
-            "temperature": 0.9,
+            "temperature": 1.4,
             "max_tokens": 500
         }
         
-        # Log request parameters
-        logger.info(f"OpenAI API Request: {json.dumps(request_params, indent=2)}")
+        # Log request metadata without customer content
+        request_log = {
+            "model": model,
+            "temperature": request_params["temperature"],
+            "max_tokens": request_params["max_tokens"],
+            "has_snippets": bool(snippets),
+            "snippet_count": len(snippets) if snippets else 0,
+        }
+        logger.info("OpenAI API Request: %s", json.dumps(request_log, indent=2))
+
+        start_time = time.time()
         
-        # Use the same parameters for the API call
-        response = client.chat.completions.create(**request_params)
+        # Call OpenAI
+        response = openai.chat.completions.create(
+            **request_params,
+            metadata={"snippet_names": snippet_names},
+        )
+        
+        latency_ms = int((time.time() - start_time) * 1000)
         
         # Log API response
         response_data = {
@@ -147,15 +164,14 @@ def generate_draft(customer_message, context=None, snippets=None, trace=None, pr
                 }
                 for choice in response.choices
             ],
-            "usage": {
+            "usage_non_langfuse": {
                 "prompt_tokens": response.usage.prompt_tokens,
                 "completion_tokens": response.usage.completion_tokens,
                 "total_tokens": response.usage.total_tokens
             }
         }
+
         logger.info(f"OpenAI API Response: {json.dumps(response_data, indent=2)}")
-        
-        latency_ms = int((time.time() - start_time) * 1000)
         
         draft = response.choices[0].message.content
         usage = response.usage
@@ -173,34 +189,13 @@ def generate_draft(customer_message, context=None, snippets=None, trace=None, pr
                 "total_tokens": usage.total_tokens
             }
         
-        logger.info(f"OpenAI API Usage: {json.dumps(usage_dict, indent=2)}")
+        logger.info(f"OpenAI-reported API Usage: {json.dumps(usage_dict, indent=2)}")
 
         cost = _calculate_cost(response.model, usage.prompt_tokens, usage.completion_tokens)
         
-        metadata = {
-            "model": response.model,
-            "latency_ms": latency_ms,
-            "token_usage": {
-                "prompt_tokens": usage.prompt_tokens,
-                "completion_tokens": usage.completion_tokens,
-                "total_tokens": usage.total_tokens
-            },
-            "cost": cost,
-            "prompt_version": prompt_version
-        }
-        
-        return draft, metadata
+        return draft
         
     except Exception as e:
-        # Fallback in case of API error
+        # Fallback in case of API error, basic logging, no Langfuse propagation
         logger.error(f"OpenAI API Error: {str(e)}", exc_info=True)
-        latency_ms = int((time.time() - start_time) * 1000)
-        metadata = {
-            "model": "error",
-            "latency_ms": latency_ms,
-            "token_usage": {},
-            "error": str(e),
-            "prompt_version": prompt_version
-        }
-        return "I apologize, but I encountered an error while generating the draft. Please try again.", metadata
-        
+        return "I encountered an error while generating the draft, please try again."
