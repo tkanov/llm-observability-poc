@@ -59,9 +59,12 @@ with end-to-end tracing and a repeatable evaluation run 🙌
 
 
 ### How retrieval works
-
-1. Precompute an index from `data/kb/*.md`.
+1. Precompute an index from data/kb/*.md using TF-IDF vectorization.
 2. Retrieval returns top 3 snippets by similarity.
 3. Inject snippets into the prompt and return them as citations.
 
+### How TF-IDF works
 
+TF-IDF turns each document into a vector of word scores: terms that appear often in a document but less often across the whole set get higher weight. That makes common filler words less important and helps similarity search focus on the most distinctive terms.
+
+Implementation lives in `app/retrieval.py`, in the TF-IDF index builder and retrieval helpers (see `build_tfidf_index`).
