@@ -81,3 +81,7 @@ showing a list of traces the app produces when the `/draft-reply` endpoint is in
 TF-IDF turns each document into a vector of word scores: terms that appear often in a document but less often across the whole set get higher weight. That makes common filler words less important and helps similarity search focus on the most distinctive terms. It is easier to use for PoCs like this one.
 
 Implementation lives in `app/retrieval.py`, in the TF-IDF index builder and retrieval helpers (see `build_tfidf_index`). Can be safely ignored for the Langfuse demo purposes.
+
+## Next steps
+
+- Implement a simple eval harness
